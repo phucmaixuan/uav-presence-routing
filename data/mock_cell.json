@@ -1,0 +1,13 @@
+{
+  "cellId": "VN-VIETTEL-CELL-001",
+  "coverage": {
+    "shape": "POLYGON",
+    "pointList": [
+      {"lat": 10.8220, "lon": 106.6280},
+      {"lat": 10.8220, "lon": 106.6310},
+      {"lat": 10.8250, "lon": 106.6310},
+      {"lat": 10.8250, "lon": 106.6280},
+      {"lat": 10.8220, "lon": 106.6280}
+    ]
+  }
+}
