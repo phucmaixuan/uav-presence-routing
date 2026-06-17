@@ -26,5 +26,5 @@ type CellFootprint struct {
 type RoutingDecision struct{
 	Target string `json:"target"` //Sẽ trả ra AMF, GMLC hay NOT_SERVABLE
 	MatchedCellIDs []string `json:"matchedCellIds"` //Nếu Target=AMF thì sẽ trả ra cellId của các cell mà UAV đang ở trong đó
-	Reson string `json:"reason"`
+	Reason string `json:"reason"`
 }
