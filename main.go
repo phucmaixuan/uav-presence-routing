@@ -25,14 +25,14 @@ func main() {
 	}
 
 	//Parse json vào struct
-	var reqArea models.GeogpraphicArea
+	var reqArea models.GeographicArea
 	
 	//Đọc dữ liệu từ file json vào struct
 	if err := json.Unmarshal(reqBytes, &reqArea); err != nil {
 		log.Fatalf("Lỗi parse request: %v", err)
 	}
 
-	var cellArea models.GeogpraphicArea
+	var cellArea models.GeographicArea
 	if err := json.Unmarshal(cellBytes, &cellArea); err != nil {
 		log.Fatalf("Lỗi parse cell: %v", err)
 	}

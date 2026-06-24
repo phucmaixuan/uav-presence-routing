@@ -8,7 +8,7 @@ type Point2D struct {
 }
 
 //Vùng request cho USS gửi đến
-type GeogpraphicArea struct {
+type GeographicArea struct {
 	ShapeType string `json:"shape"` //Mặc định là Polygon
 	PointList []Point2D `json:"pointList"`
 
