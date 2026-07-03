@@ -1,0 +1,7 @@
+/* Reset font and prevent scrolling on canvas touch */
+body { 
+    font-family: 'Inter', sans-serif; 
+}
+#canvas-container { 
+    touch-action: none; 
+}

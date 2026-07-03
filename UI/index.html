@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mô phỏng Quyết định Định tuyến 5G Core</title>
+    <!-- Nhúng Tailwind CSS qua CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Nhúng file CSS rời -->
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body class="bg-gray-100 h-screen flex flex-col">
+
+    <div class="bg-white shadow-md p-4 flex-none z-10 relative">
+        <h1 class="text-xl font-bold text-gray-800 mb-2">Mô phỏng Quyết định Định tuyến 5G Core (AMF vs GMLC)</h1>
+        <p class="text-sm text-gray-600 mb-4">Mô phỏng theo tiêu chuẩn 3GPP TS 23.256 - Đánh giá độ phủ (Coverage) và độ tràn (Over-coverage) để đưa ra quyết định NF phục vụ giám sát UAV.</p>
+        
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-2">
+            <!-- Controls -->
+            <div class="bg-gray-50 p-4 rounded-lg border border-gray-200">
+                <h3 class="font-semibold text-gray-700 mb-3 text-sm">Cấu hình Hệ thống</h3>
+                
+                <div class="mb-4">
+                    <label class="block text-xs font-medium text-gray-700 mb-1">Môi trường mạng (Kích thước Cell)</label>
+                    <select id="env-select" class="w-full text-sm border-gray-300 rounded-md shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50 p-2 border">
+                        <option value="urban">Đô thị dày (Cells nhỏ - r ~200m)</option>
+                        <option value="rural">Ngoại ô thưa (Cells lớn - r ~1000m)</option>
+                    </select>
+                </div>
+
+                <div class="mb-4">
+                    <label class="block text-xs font-medium text-gray-700 mb-1 flex justify-between">
+                        <span>Bán kính Vùng yêu cầu (USS Area)</span>
+                        <span id="radius-val" class="font-mono text-blue-600">500m</span>
+                    </label>
+                    <input type="range" id="radius-slider" min="50" max="3000" step="50" value="500" class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer">
+                    <p class="text-xs text-gray-500 mt-1">Kéo hình tròn trên Canvas để thay đổi vị trí.</p>
+                </div>
+                
+                <div class="mt-4 pt-4 border-t border-gray-200">
+                    <label class="flex items-center space-x-2 text-sm text-gray-700 cursor-pointer">
+                        <input type="checkbox" id="debug-bb-toggle" class="rounded text-blue-600 focus:ring-blue-500">
+                        <span class="font-medium text-xs">Chế độ Debug: Xem Khung bao (AABB)</span>
+                    </label>
+                    <p class="text-[10px] text-gray-500 mt-1 ml-6">Mô phỏng 2 bước: Lọc thô (BB) và Lọc tinh (Hình học thực).</p>
+                </div>
+            </div>
+
+            <!-- Metrics -->
+            <div class="bg-gray-50 p-4 rounded-lg border border-gray-200 flex flex-col justify-center">
+                <h3 class="font-semibold text-gray-700 mb-3 text-sm">Chỉ số Không gian thực tế</h3>
+                
+                <div class="mb-3">
+                    <div class="flex justify-between text-xs mb-1">
+                        <span class="font-medium text-gray-600">Độ phủ (Coverage)</span>
+                        <span id="metric-coverage" class="font-mono font-bold">0%</span>
+                    </div>
+                    <div class="w-full bg-gray-200 rounded-full h-1.5">
+                        <div id="bar-coverage" class="bg-blue-500 h-1.5 rounded-full" style="width: 0%"></div>
+                    </div>
+                    <p class="text-[10px] text-gray-500 mt-0.5 text-right">Ngưỡng đạt: &gt;= 85%</p>
+                </div>
+
+                <div>
+                    <div class="flex justify-between text-xs mb-1">
+                        <span class="font-medium text-gray-600">Độ tràn viền (Over-coverage)</span>
+                        <span id="metric-over" class="font-mono font-bold">0%</span>
+                    </div>
+                    <div class="w-full bg-gray-200 rounded-full h-1.5">
+                        <div id="bar-over" class="bg-orange-500 h-1.5 rounded-full" style="width: 0%"></div>
+                    </div>
+                    <p class="text-[10px] text-gray-500 mt-0.5 text-right">Ngưỡng đạt: &lt;= 300%</p>
+                </div>
+            </div>
+
+            <!-- Decision Panel -->
+            <div id="decision-panel" class="bg-white p-4 rounded-lg border-2 border-gray-200 flex flex-col items-center justify-center text-center transition-colors duration-300">
+                <h3 class="font-bold text-gray-500 mb-1 text-sm tracking-wider uppercase">Quyết định Định tuyến</h3>
+                <div id="decision-result" class="text-xl font-bold text-gray-700 my-2">ĐANG TÍNH TOÁN...</div>
+                <p id="decision-reason" class="text-xs text-gray-600 leading-tight">Di chuyển vùng yêu cầu để bắt đầu.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Canvas Area -->
+    <div id="canvas-container" class="flex-1 relative bg-slate-50 overflow-hidden">
+        <canvas id="sim-canvas" class="absolute top-0 left-0 w-full h-full"></canvas>
+        
+        <!-- Legend Overlay -->
+        <div class="absolute bottom-4 left-4 bg-white/90 backdrop-blur-sm p-3 rounded-lg shadow-lg border border-gray-200 text-xs pointer-events-none">
+            <h4 class="font-semibold mb-2">Chú giải (Legend)</h4>
+            <div class="flex items-center gap-2 mb-1">
+                <div class="w-3 h-3 rounded-full bg-blue-500/20 border-2 border-blue-600 border-dashed"></div>
+                <span>Vùng yêu cầu (Request Area)</span>
+            </div>
+            <div class="flex items-center gap-2 mb-1">
+                <div class="w-4 h-4" style="clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%); background-color: rgba(59, 130, 246, 0.4); border: 1px solid rgba(59, 130, 246, 0.8);"></div>
+                <span>Cell 5G được chọn (AMF Mapping)</span>
+            </div>
+            <div class="flex items-center gap-2 mb-1">
+                <div class="w-3 h-3 bg-red-500/30"></div>
+                <span>Vùng tràn (Spillover - Gây báo động giả)</span>
+            </div>
+            <div class="flex items-center gap-2">
+                <div class="w-3 h-3 bg-green-500/40"></div>
+                <span>Vùng được phủ sóng (Covered)</span>
+            </div>
+            
+            <div id="legend-debug" class="hidden mt-2 pt-2 border-t border-gray-200">
+                <div class="flex items-center gap-2 mb-1">
+                    <div class="w-3 h-3 border border-red-500 border-dashed"></div>
+                    <span>Lọt qua lọc thô (Chạm Khung bao)</span>
+                </div>
+                <div class="flex items-center gap-2">
+                    <div class="w-3 h-3 bg-yellow-300/60 border border-yellow-600"></div>
+                    <span>Bị vứt bỏ ở lọc tinh (BB chạm nhưng Đa giác KHÔNG chạm)</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Nhúng file JS rời -->
+    <script src="script.js"></script>
+</body>
+</html>

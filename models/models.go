@@ -18,7 +18,7 @@ type GeographicArea struct {
 //Footprint (vùng phủ sóng) của một cell
 type CellFootprint struct {
 	CellID string `json:"cellId"`
-	Footprint GeogpraphicArea `json:"footprint"` //Đa giác phủ sóng của cell
+	Footprint GeographicArea `json:"footprint"` //Đa giác phủ sóng của cell
 
 }
 
