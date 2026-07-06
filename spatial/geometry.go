@@ -52,7 +52,7 @@ func ValidatePolygon(area models.GeographicArea) error{
 				continue
 			}
 			if doIntersect(points[i], points[i + 1], points[j], points[j + 1]){
-				return errors.New("Đa giác không hợp lệ: có cạnh cắt nhau")
+				return errors.New("Tồn tại cạnh cắt nhau")
 			}
 		}
 	}
@@ -73,7 +73,7 @@ func ConvertToOrbPolygon(area models.GeographicArea) orb.Polygon{
 }
 
 
-func IntersectionArea(polyA, polyB orb.Polygon) float64{
+func IntersectionArea(polyA, polyB orb.Polygon) float64{ //Dựa theo bounding box (có sai số)
 	boundA := polyA.Bound() //trả về cái Bound xung quanh polygon
 	boundB := polyB.Bound()
 	 

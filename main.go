@@ -7,6 +7,7 @@ import (
 	"os"
 
 	"uav-routing/models"
+	"uav-routing/routing"
 	"uav-routing/spatial"
 
 	"github.com/paulmach/orb/planar"
@@ -32,12 +33,19 @@ func main() {
 		log.Fatalf("Lỗi parse request: %v", err)
 	}
 
-	var cellArea models.GeographicArea
-	if err := json.Unmarshal(cellBytes, &cellArea); err != nil {
+	var cellData models.CellFootprint
+	if err := json.Unmarshal(cellBytes, &cellData); err != nil {
 		log.Fatalf("Lỗi parse cell: %v", err)
 	}
+	cellArea := cellData.Footprint
 	fmt.Printf("Request Area ok: %s\n", reqArea.ShapeType)
 	fmt.Printf("Cell Area ok: %s\n", cellArea.ShapeType)
+
+	//Validate polygon
+	if err := spatial.ValidatePolygon(reqArea); err != nil {
+		log.Fatalf("Request polygon không hợp lệ: %v", err)
+	}
+	fmt.Println("Request polygon hợp lệ")
 
 	//Convert qua dạng hình học của thư viện orb
 	reqPolygon := spatial.ConvertToOrbPolygon(reqArea)
@@ -49,4 +57,12 @@ func main() {
 	
 	fmt.Printf("Diện tích request: %f\n", reqAreaSize)
 	fmt.Printf("Diện tích cell: %f\n", cellAreaSize)
+
+	//Tính diện tích phần giao
+	intersectionArea :=  spatial.IntersectionArea(reqPolygon, cellPolygon)
+	fmt.Printf("Diện tích giao: %f\n", intersectionArea)
+
+	//Quyết định định tuyến
+	decision := routing.MakeDecision(reqAreaSize, cellAreaSize, intersectionArea, cellData.CellID)
+	fmt.Printf("Quyết định định tuyến: %s\n", decision.Target)
 }
